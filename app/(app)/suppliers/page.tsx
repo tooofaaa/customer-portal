@@ -61,14 +61,14 @@ export default function SuppliersPage() {
               boxShadow: "0 2px 20px rgba(0,0,0,0.06)",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLDivElement).style.boxShadow =
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow =
                 "0 8px 30px rgba(99,102,241,0.15)";
-              (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(99,102,241,0.3)";
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(99,102,241,0.3)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLDivElement).style.boxShadow =
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow =
                 "0 2px 20px rgba(0,0,0,0.06)";
-              (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(99,102,241,0.1)";
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(99,102,241,0.1)";
             }}
           >
             <div className="p-5 flex gap-4">

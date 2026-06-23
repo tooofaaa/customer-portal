@@ -4,18 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { loginCustomer } from "@/lib/actions/auth";
+import { signupCustomer } from "@/lib/actions/auth";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
   const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const l = t.login;
+  const l = t.signup;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,15 +24,16 @@ export default function LoginPage() {
     setErrorMsg("");
 
     const formData = new FormData();
+    formData.append("name", name);
     formData.append("email", email);
     formData.append("password", password);
 
-    const res = await loginCustomer(formData);
+    const res = await signupCustomer(formData);
     
     setIsLoading(false);
 
     if (res.success) {
-      router.push("/dashboard");
+      router.push("/confirm");
     } else {
       setErrorMsg(res.message);
     }
@@ -56,6 +58,22 @@ export default function LoginPage() {
             {errorMsg}
           </div>
         )}
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-semibold text-gray-700 ml-1">
+            {l.name}
+          </label>
+          <div className="relative group">
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={l.namePlaceholder}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+            />
+          </div>
+        </div>
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-semibold text-gray-700 ml-1">
@@ -95,14 +113,14 @@ export default function LoginPage() {
           className="w-full py-3.5 mt-2 text-sm shadow-indigo-500/25"
           isLoading={isLoading}
         >
-          {isLoading ? l.signingIn : l.signIn}
+          {isLoading ? l.signingUp : l.signUp}
         </Button>
 
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">
-            Don't have an account?{" "}
-            <Link href="/signup" className="text-indigo-600 font-semibold hover:underline">
-              {t.signup?.signUp || "Sign Up"}
+            {l.alreadyHaveAccount}{" "}
+            <Link href="/login" className="text-indigo-600 font-semibold hover:underline">
+              {t.login.signIn}
             </Link>
           </p>
         </div>

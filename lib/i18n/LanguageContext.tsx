@@ -60,6 +60,24 @@ const translations = {
       filterShipped: "Shipped",
       filterDelivered: "Delivered",
       noOrders: "You have no orders matching the criteria.",
+    },
+    signup: {
+      title: "Create an Account",
+      subtitle: "Join the Customer Portal to shop with top suppliers",
+      name: "Full Name",
+      namePlaceholder: "John Doe",
+      email: "Email Address",
+      emailPlaceholder: "you@example.com",
+      password: "Password",
+      passwordPlaceholder: "••••••••",
+      signUp: "Sign Up",
+      signingUp: "Signing Up...",
+      alreadyHaveAccount: "Already have an account?",
+    },
+    confirm: {
+      title: "Check Your Email",
+      subtitle: "We've sent you an email with a link to confirm your account. You must confirm your email before you can log in.",
+      backToLogin: "Back to Login",
     }
   },
   ar: {
@@ -110,6 +128,24 @@ const translations = {
       filterShipped: "تم الشحن",
       filterDelivered: "تم التوصيل",
       noOrders: "ليس لديك طلبات تطابق المعايير.",
+    },
+    signup: {
+      title: "إنشاء حساب",
+      subtitle: "انضم إلى بوابة العملاء للتسوق مع أفضل الموردين",
+      name: "الاسم الكامل",
+      namePlaceholder: "أحمد محمد",
+      email: "البريد الإلكتروني",
+      emailPlaceholder: "you@example.com",
+      password: "كلمة المرور",
+      passwordPlaceholder: "••••••••",
+      signUp: "إنشاء الحساب",
+      signingUp: "جاري الإنشاء...",
+      alreadyHaveAccount: "لديك حساب بالفعل؟",
+    },
+    confirm: {
+      title: "تحقق من بريدك الإلكتروني",
+      subtitle: "لقد أرسلنا لك بريدًا إلكترونيًا يحتوي على رابط لتأكيد حسابك. يجب تأكيد بريدك الإلكتروني قبل تسجيل الدخول.",
+      backToLogin: "العودة لتسجيل الدخول",
     }
   }
 };

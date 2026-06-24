@@ -27,7 +27,7 @@ export async function signupCustomer(formData: FormData) {
   const password = formData.get("password") as string;
   const name = formData.get("name") as string;
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -41,7 +41,12 @@ export async function signupCustomer(formData: FormData) {
     return { success: false, message: error.message };
   }
 
-  // The email confirmation is required, so the user cannot log in yet
+  // If Supabase auto-confirms (no email verification required), it returns a session
+  if (data.session) {
+    revalidatePath("/");
+    return { success: true, message: "Signed up successfully. Redirecting to dashboard..." };
+  }
+
   return { success: true, message: "Signed up successfully. Please check your email to confirm." };
 }
 

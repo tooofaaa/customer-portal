@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { MOCK_ORDERS } from "@/lib/mockData";
 import { formatCurrency, formatDate } from "@/lib/utils/formatters";
 import { SearchIcon, FilterIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/Button";
+import { createClient } from "@/lib/supabase/client";
+import { Order } from "@/lib/types";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   Pending: { bg: "rgba(245,158,11,0.1)", color: "#d97706" },
@@ -19,10 +20,57 @@ const FILTERS = ["All", "Pending", "Processing", "Shipped", "Delivered"];
 export default function OrdersPage() {
   const { t } = useLanguage();
   const [filter, setFilter] = useState("All");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadOrders() {
+      const supabase = createClient();
+      const { data } = await supabase.from('orders').select(`
+        id,
+        po_code,
+        status,
+        total_cost,
+        created_at,
+        expected_delivery_date,
+        supplier_id,
+        suppliers (supplier_name),
+        order_items (
+          quantity,
+          products (product_name)
+        )
+      `).order('created_at', { ascending: false });
+
+      if (data) {
+        const mappedOrders = data.map((o: any) => {
+          const items = o.order_items?.map((i: any) => ({
+            productName: i.products?.product_name || '',
+            quantity: i.quantity,
+          })) || [];
+
+          return {
+            id: o.id,
+            poCode: o.po_code,
+            supplierId: o.supplier_id,
+            supplierName: o.suppliers?.supplier_name || 'Unknown',
+            status: o.status,
+            totalCost: o.total_cost,
+            createdAt: o.created_at,
+            expectedDelivery: o.expected_delivery_date,
+            items: items,
+          } as Order;
+        });
+        setOrders(mappedOrders);
+      }
+      setIsLoading(false);
+    }
+    
+    loadOrders();
+  }, []);
 
   const filteredOrders = filter === "All"
-    ? MOCK_ORDERS
-    : MOCK_ORDERS.filter(o => o.status === filter);
+    ? orders
+    : orders.filter(o => o.status === filter);
 
   return (
     <div className="flex flex-col gap-6">
@@ -118,7 +166,13 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-sm" style={{ color: "#64748b" }}>
+                    Loading orders...
+                  </td>
+                </tr>
+              ) : filteredOrders.length > 0 ? (
                 filteredOrders.map((order, i) => {
                   const style = STATUS_STYLES[order.status] ?? { bg: "#f1f5f9", color: "#64748b" };
                   const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);

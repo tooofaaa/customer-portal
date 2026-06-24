@@ -1,21 +1,76 @@
 "use client";
 
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { MOCK_SUPPLIERS, MOCK_PRODUCTS } from "@/lib/mockData";
 import { useCart } from "@/lib/context/CartContext";
 import { formatCurrency } from "@/lib/utils/formatters";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Supplier, Product } from "@/lib/types";
 
 export default function SupplierDetailsPage() {
   const { t } = useLanguage();
   const { id } = useParams() as { id: string };
-  const supplier = MOCK_SUPPLIERS.find(s => s.id === id);
-  const products = MOCK_PRODUCTS[id] || [];
   const { addToCart } = useCart();
+  
+  const [supplier, setSupplier] = useState<Supplier | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      const supabase = createClient();
+      
+      const [supplierRes, productsRes] = await Promise.all([
+        supabase.from('suppliers').select('*').eq('id', id).single(),
+        supabase.from('products').select('*').eq('supplier_id', id)
+      ]);
+
+      if (supplierRes.data) {
+        setSupplier({
+          id: supplierRes.data.id,
+          name: supplierRes.data.supplier_name,
+          description: supplierRes.data.description || "A trusted supplier for our business.",
+          logoUrl: supplierRes.data.logo_url || "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=300&q=80",
+          categories: supplierRes.data.categories || ["General"],
+          rating: supplierRes.data.rating || 5.0,
+          deliveryTime: supplierRes.data.delivery_time || "2-3 days",
+          location: supplierRes.data.address || "Main Distribution Center"
+        } as Supplier);
+      }
+
+      if (productsRes.data) {
+        setProducts(productsRes.data.map((p: any) => ({
+          id: p.id,
+          supplierId: p.supplier_id,
+          supplierName: supplierRes.data?.supplier_name || 'Unknown',
+          name: p.product_name,
+          description: p.description || "High quality product.",
+          price: p.sell_price || 0,
+          unit: p.unit_of_measure || "pcs",
+          imageUrl: p.product_image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80",
+          category: p.product_category || "General",
+          inStock: p.amount_stock > 0,
+          minOrderQty: p.min_order_qty || 1
+        })) as Product[]);
+      }
+      
+      setIsLoading(false);
+    }
+    
+    loadData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <p className="text-gray-500">Loading supplier details...</p>
+      </div>
+    );
+  }
 
   if (!supplier) {
     return (
@@ -29,12 +84,11 @@ export default function SupplierDetailsPage() {
     );
   }
 
-  const handleAdd = (productId: string) => {
+  const handleAdd = (productId: number) => {
     const product = products.find(p => p.id === productId);
     if (product) {
       const qty = quantities[productId] || product.minOrderQty;
       addToCart(product, qty);
-      // Reset quantity input
       setQuantities(prev => ({ ...prev, [productId]: product.minOrderQty }));
     }
   };
@@ -54,7 +108,7 @@ export default function SupplierDetailsPage() {
           boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
         }}
       >
-        <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white flex-shrink-0 shadow-lg border border-white/10">
+        <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white flex-shrink-0 shadow-lg border border-white/10 flex items-center justify-center">
           <img src={supplier.logoUrl} alt={supplier.name} className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 text-white">
@@ -106,7 +160,7 @@ export default function SupplierDetailsPage() {
               {!product.inStock && (
                 <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center">
                   <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full font-bold text-sm border border-red-200">
-                    Out of Stock
+                     Out of Stock
                   </span>
                 </div>
               )}

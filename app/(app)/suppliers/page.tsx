@@ -1,13 +1,41 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { MOCK_SUPPLIERS } from "@/lib/mockData";
-import { SearchIcon, FilterIcon } from "@/lib/icons";
+import { SearchIcon, FilterIcon, StoreIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { Supplier } from "@/lib/types";
 
 export default function SuppliersPage() {
   const { t } = useLanguage();
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadSuppliers() {
+      const supabase = createClient();
+      const { data } = await supabase.from('suppliers').select('*').order('supplier_name');
+
+      if (data) {
+        const mapped = data.map((s: any) => ({
+          id: s.id,
+          name: s.supplier_name,
+          description: s.description || "A trusted supplier for our business.",
+          logoUrl: s.logo_url || "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=300&q=80",
+          categories: s.categories || ["General"],
+          rating: s.rating || 5.0,
+          deliveryTime: s.delivery_time || "2-3 days",
+          location: s.address || "Main Distribution Center"
+        })) as Supplier[];
+        setSuppliers(mapped);
+      }
+      setIsLoading(false);
+    }
+    
+    loadSuppliers();
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,84 +77,98 @@ export default function SuppliersPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {MOCK_SUPPLIERS.map((supplier) => (
-          <Link
-            href={`/suppliers/${supplier.id}`}
-            key={supplier.id}
-            className="flex flex-col rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-pointer group block"
-            style={{
-              background: "rgba(255,255,255,0.95)",
-              border: "1px solid rgba(99,102,241,0.1)",
-              boxShadow: "0 2px 20px rgba(0,0,0,0.06)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-                "0 8px 30px rgba(99,102,241,0.15)";
-              (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(99,102,241,0.3)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-                "0 2px 20px rgba(0,0,0,0.06)";
-              (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(99,102,241,0.1)";
-            }}
-          >
-            <div className="p-5 flex gap-4">
-              <div
-                className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0"
-                style={{ border: "1px solid rgba(0,0,0,0.05)" }}
-              >
-                <img src={supplier.logoUrl} alt={supplier.name} className="w-full h-full object-cover" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-semibold text-base truncate pr-2" style={{ color: "#0f172a" }}>
-                    {supplier.name}
-                  </h3>
-                  <div className="flex items-center gap-1 text-xs font-semibold bg-amber-50 text-amber-600 px-2 py-0.5 rounded-md">
-                    ★ {supplier.rating}
-                  </div>
-                </div>
-                <p className="text-xs mt-1 flex items-center gap-1.5" style={{ color: "#64748b" }}>
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                  {supplier.location}
-                </p>
-                <p className="text-xs mt-1 flex items-center gap-1.5" style={{ color: "#64748b" }}>
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  {supplier.deliveryTime} delivery
-                </p>
-              </div>
-            </div>
-
-            <div className="px-5 pb-4">
-              <p className="text-sm line-clamp-2 leading-relaxed" style={{ color: "#475569" }}>
-                {supplier.description}
-              </p>
-            </div>
-
-            <div
-              className="mt-auto px-5 py-3 flex items-center gap-2 overflow-x-auto"
-              style={{ background: "rgba(248,249,252,0.8)", borderTop: "1px solid rgba(99,102,241,0.05)" }}
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <p className="text-gray-500">Loading suppliers...</p>
+        </div>
+      ) : suppliers.length === 0 ? (
+        <div className="flex justify-center py-12">
+          <p className="text-gray-500">No suppliers found.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {suppliers.map((supplier) => (
+            <Link
+              href={`/suppliers/${supplier.id}`}
+              key={supplier.id}
+              className="flex flex-col rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-pointer group block"
+              style={{
+                background: "rgba(255,255,255,0.95)",
+                border: "1px solid rgba(99,102,241,0.1)",
+                boxShadow: "0 2px 20px rgba(0,0,0,0.06)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow =
+                  "0 8px 30px rgba(99,102,241,0.15)";
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(99,102,241,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow =
+                  "0 2px 20px rgba(0,0,0,0.06)";
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(99,102,241,0.1)";
+              }}
             >
-              {supplier.categories.map((cat) => (
-                <span
-                  key={cat}
-                  className="px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap"
-                  style={{ background: "#ffffff", color: "#6366f1", border: "1px solid rgba(99,102,241,0.15)" }}
+              <div className="p-5 flex gap-4">
+                <div
+                  className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0"
+                  style={{ border: "1px solid rgba(0,0,0,0.05)", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
-                  {cat}
-                </span>
-              ))}
-            </div>
-          </Link>
-        ))}
-      </div>
+                  {supplier.logoUrl ? (
+                    <img src={supplier.logoUrl} alt={supplier.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <StoreIcon className="w-8 h-8 text-indigo-300" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold text-base truncate pr-2" style={{ color: "#0f172a" }}>
+                      {supplier.name}
+                    </h3>
+                    <div className="flex items-center gap-1 text-xs font-semibold bg-amber-50 text-amber-600 px-2 py-0.5 rounded-md">
+                      ★ {supplier.rating}
+                    </div>
+                  </div>
+                  <p className="text-xs mt-1 flex items-center gap-1.5" style={{ color: "#64748b" }}>
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    {supplier.location}
+                  </p>
+                  <p className="text-xs mt-1 flex items-center gap-1.5" style={{ color: "#64748b" }}>
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    {supplier.deliveryTime} delivery
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-5 pb-4">
+                <p className="text-sm line-clamp-2 leading-relaxed" style={{ color: "#475569" }}>
+                  {supplier.description}
+                </p>
+              </div>
+
+              <div
+                className="mt-auto px-5 py-3 flex items-center gap-2 overflow-x-auto"
+                style={{ background: "rgba(248,249,252,0.8)", borderTop: "1px solid rgba(99,102,241,0.05)" }}
+              >
+                {supplier.categories.map((cat) => (
+                  <span
+                    key={cat}
+                    className="px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap"
+                    style={{ background: "#ffffff", color: "#6366f1", border: "1px solid rgba(99,102,241,0.15)" }}
+                  >
+                    {cat}
+                  </span>
+                ))}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

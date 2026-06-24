@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import StatCard from "@/components/ui/StatCard";
 import { formatCurrency, formatDate } from "@/lib/utils/formatters";
 import { OrdersIcon, ClockIcon, CheckCircleIcon, StoreIcon } from "@/lib/icons";
-import { MOCK_ORDERS } from "@/lib/mockData";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { Order } from "@/lib/types";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   Pending: { bg: "rgba(245,158,11,0.1)", color: "#d97706" },
@@ -18,9 +20,46 @@ export default function DashboardContent() {
   const { t } = useLanguage();
   const d = t.dashboard;
 
-  const totalSpent = MOCK_ORDERS.reduce((sum, o) => sum + o.totalCost, 0);
-  const activeOrders = MOCK_ORDERS.filter((o) => o.status !== "Delivered").length;
-  const completedOrders = MOCK_ORDERS.filter((o) => o.status === "Delivered").length;
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [totalSuppliers, setTotalSuppliers] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient();
+      
+      const [ordersRes, suppliersRes] = await Promise.all([
+        supabase.from('orders').select('*, suppliers(supplier_name)').order('created_at', { ascending: false }),
+        supabase.from('suppliers').select('id', { count: 'exact', head: true })
+      ]);
+
+      if (ordersRes.data) {
+        setOrders(ordersRes.data.map(o => ({
+          id: o.id,
+          poCode: o.po_code,
+          supplierId: o.supplier_id,
+          supplierName: o.suppliers?.supplier_name || 'Unknown',
+          status: o.status,
+          items: [],
+          totalCost: o.total_cost,
+          createdAt: o.created_at,
+          expectedDelivery: o.expected_delivery_date
+        })) as Order[]);
+      }
+      
+      if (suppliersRes.count !== null) {
+        setTotalSuppliers(suppliersRes.count);
+      }
+      
+      setIsLoading(false);
+    }
+    
+    fetchData();
+  }, []);
+
+  const totalSpent = orders.reduce((sum, o) => sum + Number(o.totalCost), 0);
+  const activeOrders = orders.filter((o) => o.status !== "Delivered" && o.status !== "Cancelled").length;
+  const completedOrders = orders.filter((o) => o.status === "Delivered").length;
 
   const statCards = [
     {
@@ -46,7 +85,7 @@ export default function DashboardContent() {
     },
     {
       title: d.suppliers,
-      value: 6,
+      value: totalSuppliers,
       accent: "#ec4899",
       icon: <StoreIcon className="w-4 h-4" />,
       description: "Suppliers you buy from",
@@ -71,7 +110,7 @@ export default function DashboardContent() {
           <StatCard
             key={card.title}
             title={card.title}
-            value={card.value}
+            value={isLoading ? "..." : card.value}
             accent={card.accent}
             icon={card.icon}
             description={card.description}
@@ -120,38 +159,52 @@ export default function DashboardContent() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_ORDERS.slice(0, 5).map((order, i) => {
-                const style = STATUS_STYLES[order.status] ?? { bg: "#f1f5f9", color: "#64748b" };
-                return (
-                  <tr
-                    key={order.id}
-                    style={{
-                      borderTop: i > 0 ? "1px solid rgba(99,102,241,0.06)" : undefined,
-                    }}
-                  >
-                    <td className="px-6 py-4 font-mono font-semibold text-xs" style={{ color: "#6366f1" }}>
-                      {order.poCode}
-                    </td>
-                    <td className="px-6 py-4 font-medium" style={{ color: "#0f172a" }}>
-                      {order.supplierName}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className="px-2.5 py-1 rounded-full text-xs font-semibold"
-                        style={{ background: style.bg, color: style.color }}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-semibold" style={{ color: "#0f172a" }}>
-                      {formatCurrency(order.totalCost)}
-                    </td>
-                    <td className="px-6 py-4" style={{ color: "#475569" }}>
-                      {formatDate(order.expectedDelivery)}
-                    </td>
-                  </tr>
-                );
-              })}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                    Loading orders...
+                  </td>
+                </tr>
+              ) : orders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                    No orders found.
+                  </td>
+                </tr>
+              ) : (
+                orders.slice(0, 5).map((order, i) => {
+                  const style = STATUS_STYLES[order.status] ?? { bg: "#f1f5f9", color: "#64748b" };
+                  return (
+                    <tr
+                      key={order.id}
+                      style={{
+                        borderTop: i > 0 ? "1px solid rgba(99,102,241,0.06)" : undefined,
+                      }}
+                    >
+                      <td className="px-6 py-4 font-mono font-semibold text-xs" style={{ color: "#6366f1" }}>
+                        {order.poCode}
+                      </td>
+                      <td className="px-6 py-4 font-medium" style={{ color: "#0f172a" }}>
+                        {order.supplierName}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                          style={{ background: style.bg, color: style.color }}
+                        >
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-semibold" style={{ color: "#0f172a" }}>
+                        {formatCurrency(order.totalCost)}
+                      </td>
+                      <td className="px-6 py-4" style={{ color: "#475569" }}>
+                        {formatDate(order.expectedDelivery)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

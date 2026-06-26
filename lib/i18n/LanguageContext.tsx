@@ -8,7 +8,7 @@ interface LanguageContextType {
   language: Language;
   toggleLanguage: () => void;
   isRTL: boolean;
-  t: any;
+  t: typeof translations.en;
 }
 
 const translations = {
@@ -157,9 +157,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem("portal-lang") as Language;
-    if (saved === "ar" || saved === "en") setLanguage(saved);
+    setTimeout(() => {
+      setMounted(true);
+      const saved = localStorage.getItem("portal-lang") as Language;
+      if (saved === "ar" || saved === "en") setLanguage(saved);
+    }, 0);
   }, []);
 
   const toggleLanguage = () => {

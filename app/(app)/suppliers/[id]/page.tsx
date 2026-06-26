@@ -1,6 +1,5 @@
 "use client";
 
-import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useCart } from "@/lib/context/CartContext";
 import { formatCurrency } from "@/lib/utils/formatters";
 import { Button } from "@/components/ui/Button";
@@ -10,8 +9,20 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Supplier, Product } from "@/lib/types";
 
+interface DBProduct {
+  id: number;
+  supplier_id: number;
+  product_name: string;
+  description: string | null;
+  sell_price: number | null;
+  unit_of_measure: string | null;
+  product_image: string | null;
+  product_category: string | null;
+  amount_stock: number;
+  min_order_qty: number | null;
+}
+
 export default function SupplierDetailsPage() {
-  const { t } = useLanguage();
   const { id } = useParams() as { id: string };
   const { addToCart } = useCart();
   
@@ -43,7 +54,7 @@ export default function SupplierDetailsPage() {
       }
 
       if (productsRes.data) {
-        setProducts(productsRes.data.map((p: any) => ({
+        setProducts((productsRes.data as DBProduct[]).map((p) => ({
           id: p.id,
           supplierId: p.supplier_id,
           supplierName: supplierRes.data?.supplier_name || 'Unknown',

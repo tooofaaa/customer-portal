@@ -24,12 +24,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem("customer-cart");
     if (saved) {
       try {
-        setItems(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setTimeout(() => {
+          setItems(parsed);
+        }, 0);
       } catch (e) {
         console.error("Failed to parse cart", e);
       }
     }
-    setIsLoaded(true);
+    setTimeout(() => {
+      setIsLoaded(true);
+    }, 0);
   }, []);
 
   // Save to local storage

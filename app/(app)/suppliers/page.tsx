@@ -8,6 +8,17 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Supplier } from "@/lib/types";
 
+interface DBSupplier {
+  id: number;
+  supplier_name: string;
+  description: string | null;
+  logo_url: string | null;
+  categories: string[] | null;
+  rating: number | null;
+  delivery_time: string | null;
+  address: string | null;
+}
+
 export default function SuppliersPage() {
   const { t } = useLanguage();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -19,7 +30,7 @@ export default function SuppliersPage() {
       const { data } = await supabase.from('suppliers').select('*').order('supplier_name');
 
       if (data) {
-        const mapped = data.map((s: any) => ({
+        const mapped = (data as unknown as DBSupplier[]).map((s) => ({
           id: s.id,
           name: s.supplier_name,
           description: s.description || "A trusted supplier for our business.",

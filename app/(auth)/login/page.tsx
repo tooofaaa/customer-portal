@@ -100,7 +100,7 @@ export default function LoginPage() {
 
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-indigo-600 font-semibold hover:underline">
               {t.signup?.signUp || "Sign Up"}
             </Link>

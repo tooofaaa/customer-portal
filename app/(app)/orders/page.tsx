@@ -17,6 +17,27 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
 
 const FILTERS = ["All", "Pending", "Processing", "Shipped", "Delivered"];
 
+interface DBOrderItem {
+  quantity: number;
+  products: {
+    product_name: string;
+  } | null;
+}
+
+interface DBPurchaseOrder {
+  id: string | number;
+  po_code: string;
+  status: string;
+  total_cost: number;
+  created_at: string;
+  expected_delivery_date: string | null;
+  supplier_id: string | number;
+  suppliers: {
+    supplier_name: string;
+  } | null;
+  order_items: DBOrderItem[] | null;
+}
+
 export default function OrdersPage() {
   const { t } = useLanguage();
   const [filter, setFilter] = useState("All");
@@ -42,8 +63,8 @@ export default function OrdersPage() {
       `).order('created_at', { ascending: false });
 
       if (data) {
-        const mappedOrders = data.map((o: any) => {
-          const items = o.order_items?.map((i: any) => ({
+        const mappedOrders = (data as unknown as DBPurchaseOrder[]).map((o) => {
+          const items = o.order_items?.map((i) => ({
             productName: i.products?.product_name || '',
             quantity: i.quantity,
           })) || [];

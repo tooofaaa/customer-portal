@@ -40,7 +40,7 @@ export default function CartPage() {
             <span className="text-3xl">🛒</span>
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-          <p className="text-gray-500 mb-6">Looks like you haven't added any products to your cart yet.</p>
+          <p className="text-gray-500 mb-6">Looks like you haven&apos;t added any products to your cart yet.</p>
           <Link href="/suppliers">
             <Button variant="primary">Browse Suppliers</Button>
           </Link>

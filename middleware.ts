@@ -38,7 +38,13 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const isAuthRoute = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/signup");
+    console.log(`[Middleware] Path: ${request.nextUrl.pathname}, Cookies: ${request.cookies.getAll().map(c => c.name).join(", ")}, User: ${user?.email || "none"}`);
+
+    const isAuthRoute =
+      request.nextUrl.pathname.startsWith("/login") ||
+      request.nextUrl.pathname.startsWith("/signup") ||
+      request.nextUrl.pathname.startsWith("/confirm") ||
+      request.nextUrl.pathname.startsWith("/auth/callback");
 
     let redirectResponse: NextResponse | null = null;
 

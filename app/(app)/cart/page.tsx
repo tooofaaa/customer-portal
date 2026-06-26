@@ -5,15 +5,30 @@ import { useCart } from "@/lib/context/CartContext";
 import { formatCurrency } from "@/lib/utils/formatters";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { checkoutCart } from "@/lib/actions/orders";
 
 export default function CartPage() {
   const { t } = useLanguage();
+  const router = useRouter();
   const { items, updateQuantity, removeFromCart, totalItems, totalPrice, clearCart } = useCart();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
-  const handleCheckout = () => {
-    // Simulate checkout
-    alert("Checkout successful! (Simulated)");
-    clearCart();
+  const handleCheckout = async () => {
+    if (items.length === 0 || isCheckingOut) return;
+
+    setIsCheckingOut(true);
+    const res = await checkoutCart(items);
+    setIsCheckingOut(false);
+
+    if (res.success) {
+      alert(res.message);
+      clearCart();
+      router.push("/orders");
+    } else {
+      alert(res.message);
+    }
   };
 
   return (
@@ -137,7 +152,12 @@ export default function CartPage() {
                 <p className="text-xs text-gray-400 mt-1 text-right">Includes 5% VAT</p>
               </div>
 
-              <Button variant="primary" className="w-full py-3 text-base shadow-indigo-500/25" onClick={handleCheckout}>
+              <Button 
+                variant="primary" 
+                className="w-full py-3 text-base shadow-indigo-500/25" 
+                onClick={handleCheckout}
+                isLoading={isCheckingOut}
+              >
                 Proceed to Checkout
               </Button>
             </div>

@@ -5,6 +5,7 @@ import { HamburgerIcon, LogOutIcon, ShoppingCartIcon } from "@/lib/icons";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useCart } from "@/lib/context/CartContext";
 import Link from "next/link";
+import { logoutCustomer } from "@/lib/actions/auth";
 
 interface TopbarProps {
   onMenuClick: () => void;
@@ -15,6 +16,33 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
   const { totalItems } = useCart();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [userName, setUserName] = useState("Customer");
+
+  useEffect(() => {
+    let active = true;
+    async function loadUserName() {
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) return;
+        if (user && active) {
+          const { data } = await supabase.from("users").select("name").eq("id", user.id).single();
+          if (data && data.name && active) {
+            setUserName(data.name);
+          } else if (user.user_metadata?.name && active) {
+            setUserName(user.user_metadata.name);
+          }
+        }
+      } catch (e) {
+        // Safe fallback for unmounts/aborts
+      }
+    }
+    loadUserName();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -121,7 +149,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
               boxShadow: "0 2px 10px rgba(99,102,241,0.35)",
             }}
           >
-            C
+            {userName.charAt(0).toUpperCase()}
           </button>
 
           {dropdownOpen && (
@@ -134,9 +162,12 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
                 animation: "dropdownIn 0.15s ease-out",
               }}
             >
-              <form action={() => { window.location.href = '/login'; }}>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={async () => {
+                    await logoutCustomer();
+                    window.location.href = '/login';
+                  }}
                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm cursor-pointer transition-all duration-150"
                   style={{ color: "#ef4444" }}
                   onMouseEnter={(e) => {
@@ -149,7 +180,6 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
                   <LogOutIcon className="w-4 h-4" />
                   {t.nav.logOut}
                 </button>
-              </form>
             </div>
           )}
         </div>

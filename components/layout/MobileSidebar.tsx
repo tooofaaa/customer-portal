@@ -4,6 +4,7 @@ import NavItem from "@/components/ui/NavItem";
 import { LogOutIcon } from "@/lib/icons";
 import { MAIN_NAV_LINKS, FOOTER_NAV_LINKS } from "@/lib/constants";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { logoutCustomer } from "@/lib/actions/auth";
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -116,15 +117,17 @@ export default function MobileSidebar({ isOpen, setIsOpen }: MobileSidebarProps)
             })}
           </div>
 
-          <form action={() => { window.location.href = '/login'; }}>
-            <button
-              className="w-full cursor-pointer flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 mt-2"
-              style={{ color: "rgba(239,68,68,0.8)" }}
-            >
-              <LogOutIcon className="w-5 h-5 flex-shrink-0" />
-              <span>{navLabels.logOut}</span>
-            </button>
-          </form>
+          <button
+            onClick={async () => {
+              await logoutCustomer();
+              window.location.href = '/login';
+            }}
+            className="w-full cursor-pointer flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 mt-2"
+            style={{ color: "rgba(239,68,68,0.8)" }}
+          >
+            <LogOutIcon className="w-5 h-5 flex-shrink-0" />
+            <span>{navLabels.logOut}</span>
+          </button>
         </div>
       </aside>
     </>

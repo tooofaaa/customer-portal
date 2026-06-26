@@ -44,10 +44,10 @@ export async function signupCustomer(formData: FormData) {
   // If Supabase auto-confirms (no email verification required), it returns a session
   if (data.session) {
     revalidatePath("/");
-    return { success: true, message: "Signed up successfully. Redirecting to dashboard..." };
+    return { success: true, message: "Signed up successfully. Redirecting to dashboard...", session: true };
   }
 
-  return { success: true, message: "Signed up successfully. Please check your email to confirm." };
+  return { success: true, message: "Signed up successfully. Please check your email to confirm.", session: false };
 }
 
 export async function logoutCustomer() {

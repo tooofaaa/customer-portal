@@ -33,7 +33,11 @@ export default function SignupPage() {
     setIsLoading(false);
 
     if (res.success) {
-      router.push("/confirm");
+      if ((res as any).session) {
+        router.push("/dashboard");
+      } else {
+        router.push("/confirm");
+      }
     } else {
       setErrorMsg(res.message);
     }

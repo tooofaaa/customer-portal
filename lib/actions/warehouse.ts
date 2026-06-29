@@ -11,7 +11,7 @@ export async function getWarehouseStorage(): Promise<{ data: WarehouseStorage[];
   if (!user) return { data: [], error: "Unauthorized" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();
@@ -40,7 +40,7 @@ export async function requestWarehouseStorage(spaceM3: number, notes?: string): 
   if (spaceM3 <= 0) return { success: false, error: "Space requested must be greater than 0" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();

@@ -11,7 +11,7 @@ export async function getCustomerWallet(): Promise<{ data: CustomerWallet | null
   if (!user) return { data: null, error: "Unauthorized" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();
@@ -55,7 +55,7 @@ export async function getWalletTransactions(): Promise<{ data: CustomerWalletTra
   if (!user) return { data: [], error: "Unauthorized" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();
@@ -92,7 +92,7 @@ export async function depositFunds(amount: number): Promise<{ success: boolean; 
   if (amount <= 0) return { success: false, error: "Amount must be greater than 0" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();

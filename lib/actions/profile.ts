@@ -11,7 +11,7 @@ export async function getCustomerProfile(): Promise<{ data: CustomerProfile | nu
   if (!user) return { data: null, error: "Unauthorized" };
 
   let { data, error } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("*")
     .eq("portal_user_id", user.id)
     .maybeSingle();
@@ -23,7 +23,7 @@ export async function getCustomerProfile(): Promise<{ data: CustomerProfile | nu
   // Auto-provision profile on first access
   if (!data) {
     const { data: newProfile, error: insertError } = await supabase
-      .from("customer_profiles")
+      .from("customers")
       .insert({
         portal_user_id: user.id,
         company_name: user.user_metadata?.company_name || user.email?.split("@")[0] || "New Company",
@@ -49,7 +49,7 @@ export async function updateCustomerProfile(payload: Partial<CustomerProfile>): 
   if (!user) return { success: false, error: "Unauthorized" };
 
   const { error } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .update({
       company_name: payload.company_name,
       tax_number: payload.tax_number,
@@ -76,7 +76,7 @@ export async function getCustomerBranches(): Promise<{ data: CustomerBranch[]; e
   if (!user) return { data: [], error: "Unauthorized" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();
@@ -103,7 +103,7 @@ export async function addCustomerBranch(branch: Omit<CustomerBranch, "id" | "cus
   if (!user) return { success: false, error: "Unauthorized" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();
@@ -136,7 +136,7 @@ export async function deleteCustomerBranch(branchId: number): Promise<{ success:
   if (!user) return { success: false, error: "Unauthorized" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();
@@ -165,7 +165,7 @@ export async function getCustomerDocuments(): Promise<{ data: CustomerDocument[]
   if (!user) return { data: [], error: "Unauthorized" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();
@@ -192,7 +192,7 @@ export async function addCustomerDocument(doc: Omit<CustomerDocument, "id" | "cu
   if (!user) return { success: false, error: "Unauthorized" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();

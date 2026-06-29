@@ -12,7 +12,7 @@ export async function getCustomerMembership(): Promise<{ data: CustomerMembershi
 
   // Fetch profile first
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();
@@ -80,7 +80,7 @@ export async function recalculateMembershipTier(): Promise<{ success: boolean; n
   if (!user) return { success: false, error: "Unauthorized" };
 
   const { data: profile } = await supabase
-    .from("customer_profiles")
+    .from("customers")
     .select("id")
     .eq("portal_user_id", user.id)
     .maybeSingle();

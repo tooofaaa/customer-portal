@@ -28,6 +28,14 @@ export default function SupplierDetailsPage() {
   
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  
+  // Search and filters state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [maxPrice, setMaxPrice] = useState<number | "">("");
+
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,7 +62,7 @@ export default function SupplierDetailsPage() {
       }
 
       if (productsRes.data) {
-        setProducts((productsRes.data as DBProduct[]).map((p) => ({
+        const mappedProducts = (productsRes.data as DBProduct[]).map((p) => ({
           id: p.id,
           supplierId: p.supplier_id,
           supplierName: supplierRes.data?.supplier_name || 'Unknown',
@@ -66,7 +74,9 @@ export default function SupplierDetailsPage() {
           category: p.product_category || "General",
           inStock: p.amount_stock > 0,
           minOrderQty: p.min_order_qty || 1
-        })) as Product[]);
+        })) as Product[];
+        setProducts(mappedProducts);
+        setFilteredProducts(mappedProducts);
       }
       
       setIsLoading(false);
@@ -74,6 +84,32 @@ export default function SupplierDetailsPage() {
     
     loadData();
   }, [id]);
+
+  // Apply frontend search filters dynamically
+  useEffect(() => {
+    let result = products;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)
+      );
+    }
+
+    if (selectedCategory !== "All") {
+      result = result.filter(p => p.category === selectedCategory);
+    }
+
+    if (inStockOnly) {
+      result = result.filter(p => p.inStock);
+    }
+
+    if (maxPrice !== "") {
+      result = result.filter(p => p.price <= maxPrice);
+    }
+
+    setFilteredProducts(result);
+  }, [searchQuery, selectedCategory, inStockOnly, maxPrice, products]);
 
   if (isLoading) {
     return (
@@ -105,7 +141,7 @@ export default function SupplierDetailsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-10">
+    <div className="flex flex-col gap-8 pb-10 font-poppins">
       {/* Back link */}
       <Link href="/suppliers" className="text-sm font-semibold text-indigo-500 hover:text-indigo-600 inline-flex items-center gap-1 w-fit">
         ← Back to Suppliers
@@ -143,21 +179,79 @@ export default function SupplierDetailsPage() {
         </div>
       </div>
 
-      {/* Categories */}
+      {/* Category selector */}
       <div className="flex gap-2 overflow-x-auto pb-2">
-        <span className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-50 text-indigo-600 border border-indigo-200">
+        <button
+          onClick={() => setSelectedCategory("All")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap border cursor-pointer ${
+            selectedCategory === "All"
+              ? "bg-indigo-50 text-indigo-600 border-indigo-200"
+              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+          }`}
+        >
           All Products
-        </span>
+        </button>
         {supplier.categories.map(cat => (
-          <span key={cat} className="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors whitespace-nowrap">
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap border cursor-pointer ${
+              selectedCategory === cat
+                ? "bg-indigo-50 text-indigo-600 border-indigo-200"
+                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+            }`}
+          >
             {cat}
-          </span>
+          </button>
         ))}
+      </div>
+
+      {/* Search & Filters Controls */}
+      <div
+        className="rounded-2xl p-5 flex flex-col md:flex-row gap-4 items-center justify-between"
+        style={{
+          background: "rgba(255,255,255,0.95)",
+          border: "1px solid rgba(99,102,241,0.1)",
+          boxShadow: "0 2px 20px rgba(0,0,0,0.06)",
+        }}
+      >
+        <div className="w-full md:w-72">
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:border-indigo-500"
+          />
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-end">
+          <div className="flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              id="instock"
+              checked={inStockOnly}
+              onChange={(e) => setInStockOnly(e.target.checked)}
+              className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300"
+            />
+            <label htmlFor="instock" className="text-xs font-semibold text-gray-600 cursor-pointer">In stock only</label>
+          </div>
+          
+          <div className="w-32">
+            <input
+              type="number"
+              placeholder="Max Price (SAR)"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value ? parseFloat(e.target.value) : "")}
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-xl text-xs outline-none focus:border-indigo-500"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map(product => (
+        {filteredProducts.map(product => (
           <div
             key={product.id}
             className="flex flex-col rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 bg-white"
@@ -200,7 +294,7 @@ export default function SupplierDetailsPage() {
                 </div>
                 <Button 
                   variant="primary" 
-                  className="flex-1 shadow-indigo-500/25"
+                  className="flex-1 shadow-indigo-500/25 cursor-pointer"
                   disabled={!product.inStock}
                   onClick={() => handleAdd(product.id)}
                 >
@@ -213,9 +307,9 @@ export default function SupplierDetailsPage() {
             </div>
           </div>
         ))}
-        {products.length === 0 && (
+        {filteredProducts.length === 0 && (
           <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 rounded-2xl border border-gray-200 border-dashed">
-            No products available from this supplier yet.
+            No products match the selected criteria.
           </div>
         )}
       </div>

@@ -22,6 +22,9 @@ export default function MobileSidebar({ isOpen, setIsOpen }: MobileSidebarProps)
     "/cart": navLabels.cart,
     "/profile": navLabels.profile,
     "/settings": navLabels.settings,
+    "/wallet": navLabels.wallet,
+    "/membership": navLabels.membership,
+    "/warehouse": navLabels.warehouse,
   };
 
   return (

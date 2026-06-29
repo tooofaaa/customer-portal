@@ -17,6 +17,9 @@ export default function DesktopSidebar() {
     "/cart": navLabels.cart,
     "/profile": navLabels.profile,
     "/settings": navLabels.settings,
+    "/wallet": navLabels.wallet,
+    "/membership": navLabels.membership,
+    "/warehouse": navLabels.warehouse,
   };
 
   return (

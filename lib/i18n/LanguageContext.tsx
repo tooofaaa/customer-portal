@@ -23,6 +23,9 @@ const translations = {
       profile: "Profile",
       settings: "Settings",
       logOut: "Log Out",
+      wallet: "Wallet",
+      membership: "Membership",
+      warehouse: "Warehouse",
     },
     common: {
       search: "Search",
@@ -91,6 +94,9 @@ const translations = {
       profile: "الملف الشخصي",
       settings: "الإعدادات",
       logOut: "تسجيل الخروج",
+      wallet: "المحفظة",
+      membership: "العضوية",
+      warehouse: "المستودع",
     },
     common: {
       search: "بحث",

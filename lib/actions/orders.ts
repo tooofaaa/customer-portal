@@ -2,6 +2,7 @@
 
 import { createClientServer } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { Order, OrderItem } from "@/lib/types";
 
 interface CheckoutItem {
   product: {
@@ -76,6 +77,15 @@ export async function checkoutCart(items: CheckoutItem[]): Promise<{ success: bo
 
       if (orderId) {
         createdOrderIds.push(Number(orderId));
+
+        // Create initial timeline entry
+        await supabase.from("order_state_history").insert({
+          order_id: Number(orderId),
+          from_state: null,
+          to_state: "Pending",
+          reason: "Order checkout completed",
+          changed_by: user.id,
+        });
       }
     }
 
@@ -93,4 +103,97 @@ export async function checkoutCart(items: CheckoutItem[]): Promise<{ success: bo
       message: error.message || "Failed to process checkout",
     };
   }
+}
+
+export async function getMyOrders(): Promise<{ data: Order[]; error: string | null }> {
+  const supabase = await createClientServer();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { data: [], error: "Unauthorized" };
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, suppliers(supplier_name), order_items(*, products(*))")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { data: [], error: error.message };
+  }
+
+  const orders: Order[] = (data || []).map((o: any) => ({
+    id: o.id,
+    poCode: o.po_code,
+    supplierId: o.supplier_id,
+    supplierName: o.suppliers?.supplier_name || "Unknown",
+    status: o.status,
+    totalCost: o.total_cost,
+    createdAt: o.created_at,
+    expectedDelivery: o.expected_delivery_date,
+    items: (o.order_items || []).map((item: any) => ({
+      productId: item.product_id,
+      productName: item.products?.product_name || "Unknown",
+      quantity: item.quantity,
+      unitPrice: item.cost_per_item,
+      subtotal: item.quantity * item.cost_per_item,
+    })),
+  }));
+
+  return { data: orders, error: null };
+}
+
+export async function getOrderTimeline(orderId: number): Promise<{ data: any[]; error: string | null }> {
+  const supabase = await createClientServer();
+  const { data, error } = await supabase
+    .from("order_state_history")
+    .select("*")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    return { data: [], error: error.message };
+  }
+
+  return { data: data || [], error: null };
+}
+
+export async function requestReturn(orderId: number, reason: string): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClientServer();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  // Fetch order current status
+  const { data: order } = await supabase
+    .from("orders")
+    .select("status")
+    .eq("id", orderId)
+    .single();
+
+  if (!order || order.status !== "Delivered") {
+    return { success: false, error: "Only delivered orders can be returned." };
+  }
+
+  // Update order status
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({ status: "ReturnRequest" })
+    .eq("id", orderId);
+
+  if (updateError) {
+    return { success: false, error: updateError.message };
+  }
+
+  // Log state change
+  await supabase.from("order_state_history").insert({
+    order_id: orderId,
+    from_state: "Delivered",
+    to_state: "ReturnRequest",
+    reason: reason,
+    changed_by: user.id,
+  });
+
+  revalidatePath("/orders");
+
+  return { success: true, error: null };
 }

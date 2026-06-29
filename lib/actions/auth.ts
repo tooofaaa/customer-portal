@@ -32,6 +32,7 @@ export async function signupCustomer(formData: FormData) {
     password,
     options: {
       data: {
+        role: "customer",
         name,
       },
     },

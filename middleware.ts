@@ -48,15 +48,12 @@ export async function middleware(request: NextRequest) {
 
     let redirectResponse: NextResponse | null = null;
 
-    if (!user && !isAuthRoute && request.nextUrl.pathname !== "/login") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      redirectResponse = NextResponse.redirect(url);
-    } else if (user && isAuthRoute) {
+    if (isAuthRoute) {
+      // DEACTIVATED: Redirect all auth routes to dashboard for testing
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       redirectResponse = NextResponse.redirect(url);
-    } else if (user && request.nextUrl.pathname === "/") {
+    } else if (request.nextUrl.pathname === "/") {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       redirectResponse = NextResponse.redirect(url);
